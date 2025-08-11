@@ -132,7 +132,7 @@ app.post("/products", async (req, res) => {
 });
 
 // Read All Products
-app.get("/products", async (req, res) => {
+app.get("/get-products", async (req, res) => {
   try {
     const products = await productsCollection.find().toArray();
     res.json(products);
