@@ -84,172 +84,107 @@ const sampleCustomers = [
   { name: "Charlie White", email: "ghfghfgh", phone: "333-333-3333" },
 ];
 
-// Connect to MongoDB and insert sample data if empty
+// Ensure DB connection before handling request
 async function connectDB() {
-  try {
-    const client = new MongoClient(uri, {
-      serverApi: {
-        version: ServerApiVersion.v1,
-        strict: true,
-        deprecationErrors: true,
-      },
-    });
+  if (db) return;
+  client = new MongoClient(uri, {
+    serverApi: { version: ServerApiVersion.v1, strict: true, deprecationErrors: true },
+  });
+  await client.connect();
+  db = client.db(dbName);
+  productsCollection = db.collection("products");
+  customersCollection = db.collection("customers");
 
-    await client.connect();
-    db = client.db(dbName);
-    productsCollection = db.collection(productsCollectionName);
-    customersCollection = db.collection(customersCollectionName);
-
-    console.log("Connected to MongoDB");
-
-    // Insert sample products if empty
-    if ((await productsCollection.countDocuments()) === 0) {
-      await productsCollection.insertMany(sampleProducts);
-      console.log("Inserted sample products");
-    }
-
-    // Insert sample customers if empty
-    if ((await customersCollection.countDocuments()) === 0) {
-      await customersCollection.insertMany(sampleCustomers);
-      console.log("Inserted sample customers");
-    }
-  } catch (err) {
-    console.error("DB Connection Error:", err);
-    process.exit(1);
+  // Insert sample data if empty
+  if ((await productsCollection.countDocuments()) === 0) {
+    await productsCollection.insertMany(sampleProducts);
   }
+  if ((await customersCollection.countDocuments()) === 0) {
+    await customersCollection.insertMany(sampleCustomers);
+  }
+
+  console.log("Connected to MongoDB");
 }
 
-// -------------------- PRODUCT ROUTES --------------------
+// Middleware to ensure DB is ready
+app.use(async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    res.status(500).json({ error: "DB connection failed", details: err.message });
+  }
+});
 
-// Create Product
+/* ---------------- PRODUCT ROUTES ---------------- */
+app.get("/products", async (req, res) => {
+  const products = await productsCollection.find().toArray();
+  res.json(products);
+});
+
 app.post("/products", async (req, res) => {
-  try {
-    const result = await productsCollection.insertOne(req.body);
-    res.status(201).json({ message: "Product added", id: result.insertedId });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const result = await productsCollection.insertOne(req.body);
+  res.status(201).json({ message: "Product added", id: result.insertedId });
 });
 
-// Read All Products
-app.get("/get-products", async (req, res) => {
-  try {
-    const products = await productsCollection.find().toArray();
-    res.json(products);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Read One Product
 app.get("/products/:id", async (req, res) => {
-  try {
-    const product = await productsCollection.findOne({
-      _id: new ObjectId(req.params.id),
-    });
-    if (!product) return res.status(404).json({ error: "Not found" });
-    res.json(product);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const product = await productsCollection.findOne({ _id: new ObjectId(req.params.id) });
+  if (!product) return res.status(404).json({ error: "Not found" });
+  res.json(product);
 });
 
-// Update Product
 app.put("/products/:id", async (req, res) => {
-  try {
-    const result = await productsCollection.updateOne(
-      { _id: new ObjectId(req.params.id) },
-      { $set: req.body }
-    );
-    if (result.matchedCount === 0)
-      return res.status(404).json({ error: "Not found" });
-    res.json({ message: "Updated" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const result = await productsCollection.updateOne(
+    { _id: new ObjectId(req.params.id) },
+    { $set: req.body }
+  );
+  if (result.matchedCount === 0) return res.status(404).json({ error: "Not found" });
+  res.json({ message: "Updated" });
 });
 
-// Delete Product
 app.delete("/products/:id", async (req, res) => {
-  try {
-    const result = await productsCollection.deleteOne({
-      _id: new ObjectId(req.params.id),
-    });
-    if (result.deletedCount === 0)
-      return res.status(404).json({ error: "Not found" });
-    res.json({ message: "Deleted" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const result = await productsCollection.deleteOne({ _id: new ObjectId(req.params.id) });
+  if (result.deletedCount === 0) return res.status(404).json({ error: "Not found" });
+  res.json({ message: "Deleted" });
 });
 
-// -------------------- CUSTOMER ROUTES --------------------
-
-// Create Customer
-app.post("/customers", async (req, res) => {
-  try {
-    const result = await customersCollection.insertOne(req.body);
-    res.status(201).json({ message: "Customer added", id: result.insertedId });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Read All Customers
+/* ---------------- CUSTOMER ROUTES ---------------- */
 app.get("/customers", async (req, res) => {
-  try {
-    const customers = await customersCollection.find().toArray();
-    res.json(customers);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const customers = await customersCollection.find().toArray();
+  res.json(customers);
 });
 
-// Read One Customer
+app.post("/customers", async (req, res) => {
+  const result = await customersCollection.insertOne(req.body);
+  res.status(201).json({ message: "Customer added", id: result.insertedId });
+});
+
 app.get("/customers/:id", async (req, res) => {
-  try {
-    const customer = await customersCollection.findOne({
-      _id: new ObjectId(req.params.id),
-    });
-    if (!customer) return res.status(404).json({ error: "Not found" });
-    res.json(customer);
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const customer = await customersCollection.findOne({ _id: new ObjectId(req.params.id) });
+  if (!customer) return res.status(404).json({ error: "Not found" });
+  res.json(customer);
 });
 
-// Update Customer
 app.put("/customers/:id", async (req, res) => {
-  try {
-    const result = await customersCollection.updateOne(
-      { _id: new ObjectId(req.params.id) },
-      { $set: req.body }
-    );
-    if (result.matchedCount === 0)
-      return res.status(404).json({ error: "Not found" });
-    res.json({ message: "Updated" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const result = await customersCollection.updateOne(
+    { _id: new ObjectId(req.params.id) },
+    { $set: req.body }
+  );
+  if (result.matchedCount === 0) return res.status(404).json({ error: "Not found" });
+  res.json({ message: "Updated" });
 });
 
-// Delete Customer
 app.delete("/customers/:id", async (req, res) => {
-  try {
-    const result = await customersCollection.deleteOne({
-      _id: new ObjectId(req.params.id),
-    });
-    if (result.deletedCount === 0)
-      return res.status(404).json({ error: "Not found" });
-    res.json({ message: "Deleted" });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
+  const result = await customersCollection.deleteOne({ _id: new ObjectId(req.params.id) });
+  if (result.deletedCount === 0) return res.status(404).json({ error: "Not found" });
+  res.json({ message: "Deleted" });
 });
 
-// -------------------- START SERVER --------------------
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, async () => {
-  await connectDB();
-  console.log(`Server running on port ${PORT}`);
-});
+/* ---------------- EXPORT FOR VERCEL ---------------- */
+module.exports = app;
+
+// If running locally, start server
+if (require.main === module) {
+  const PORT = process.env.PORT || 3000;
+  app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+}
