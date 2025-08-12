@@ -6,6 +6,7 @@ const uri = "mongodb+srv://SuperMart123:Askavi123@cluster0.iqiqbhm.mongodb.net/?
 const dbName = "nexus_supermart";
 const productsCollectionName = "products";
 const customersCollectionName = "customers";
+const ordersCollectionName = "orders";
 
 const app = express();
 app.use(bodyParser.json());
@@ -21,9 +22,14 @@ app.use((req, res, next) => {
   next();
 });
 
-let db, productsCollection, customersCollection;
+// Globals for DB and collections
+let client;
+let db;
+let productsCollection;
+let customersCollection;
+let ordersCollection;
 
-// Sample Products Data
+// Sample data
 const sampleProducts = [
   {
     id: "P001",
@@ -75,7 +81,6 @@ const sampleProducts = [
   },
 ];
 
-// Sample Customers Data
 const sampleCustomers = [
   { name: "John Doe", email: "kvjdhfjkshf", phone: "123-456-7890" },
   { name: "Jane Smith", email: "fhgfgh", phone: "987-654-3210" },
@@ -84,7 +89,7 @@ const sampleCustomers = [
   { name: "Charlie White", email: "ghfghfgh", phone: "333-333-3333" },
 ];
 
-// Ensure DB connection before handling request
+// Connect to DB and set up collections
 async function connectDB() {
   if (db) return;
   client = new MongoClient(uri, {
@@ -92,8 +97,9 @@ async function connectDB() {
   });
   await client.connect();
   db = client.db(dbName);
-  productsCollection = db.collection("products");
-  customersCollection = db.collection("customers");
+  productsCollection = db.collection(productsCollectionName);
+  customersCollection = db.collection(customersCollectionName);
+  ordersCollection = db.collection(ordersCollectionName);
 
   // Insert sample data if empty
   if ((await productsCollection.countDocuments()) === 0) {
@@ -106,7 +112,7 @@ async function connectDB() {
   console.log("Connected to MongoDB");
 }
 
-// Middleware to ensure DB is ready
+// Middleware to ensure DB is connected
 app.use(async (req, res, next) => {
   try {
     await connectDB();
@@ -180,10 +186,72 @@ app.delete("/customers/:id", async (req, res) => {
   res.json({ message: "Deleted" });
 });
 
+/* ---------------- ORDER ROUTES ---------------- */
+app.post("/api/orders", async (req, res) => {
+  try {
+    const order = req.body;
+    const result = await ordersCollection.insertOne(order);
+    res.status(201).json({ message: "Order created successfully", id: result.insertedId });
+  } catch (err) {
+    console.error("Error creating order:", err);
+    res.status(500).json({ error: "Failed to create order" });
+  }
+});
+
+app.get("/api/orders", async (req, res) => {
+  try {
+    const orders = await ordersCollection.find().toArray();
+    res.json(orders);
+  } catch (err) {
+    console.error("Error fetching orders:", err);
+    res.status(500).json({ error: "Failed to fetch orders" });
+  }
+});
+
+// Get Orders by Date Range
+app.get("/api/orders/date-range", async (req, res) => {
+  try {
+    const { start, end } = req.query;
+    if (!start || !end) {
+      return res.status(400).json({ error: "Please provide start and end dates" });
+    }
+
+    const orders = await ordersCollection.find({
+      date: { $gte: start, $lte: end }
+    }).toArray();
+
+    res.json(orders);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get Orders for a Specific Date
+app.get("/api/orders/by-date", async (req, res) => {
+  try {
+    const { date } = req.query;
+    if (!date) {
+      return res.status(400).json({ error: "Please provide a date" });
+    }
+    const startDate = new Date(date);
+    const endDate = new Date(date);
+    endDate.setHours(23, 59, 59, 999);
+
+    const orders = await ordersCollection.find({
+      date: { $gte: startDate, $lte: endDate }
+    }).toArray();
+
+    res.json(orders);
+  } catch (error) {
+    console.error("Error fetching orders by specific date:", error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 /* ---------------- EXPORT FOR VERCEL ---------------- */
 module.exports = app;
 
-// If running locally, start server
+// If running locally
 if (require.main === module) {
   const PORT = process.env.PORT || 3000;
   app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
