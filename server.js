@@ -141,7 +141,7 @@ app.get("/products/:id", async (req, res) => {
 
 app.put("/products/:id", async (req, res) => {
   const result = await productsCollection.updateOne(
-    { _id: new ObjectId(req.params.id) },
+    { id: new ObjectId(req.params.id) },
     { $set: req.body }
   );
   if (result.matchedCount === 0) return res.status(404).json({ error: "Not found" });
