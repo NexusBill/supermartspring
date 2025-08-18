@@ -7,6 +7,7 @@ const dbName = "nexus_supermart";
 const productsCollectionName = "products";
 const customersCollectionName = "customers";
 const ordersCollectionName = "orders";
+const suppliersCollection = db.collection("suppliers");
 
 const app = express();
 app.use(bodyParser.json());
@@ -200,13 +201,46 @@ app.post("/api/orders", async (req, res) => {
 
 app.get("/api/orders", async (req, res) => {
   try {
-    const orders = await ordersCollection.find().toArray();
+    const now = new Date();
+
+    // First day of current month
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // First day of next month
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    const orders = await ordersCollection.find({
+      Date: { $gte: startOfMonth, $lt: endOfMonth }
+    }).toArray();
+
     res.json(orders);
   } catch (err) {
     console.error("Error fetching orders:", err);
     res.status(500).json({ error: "Failed to fetch orders" });
   }
 });
+
+app.get("/api/last-orders", async (req, res) => {
+  try {
+    const now = new Date();
+
+    // First day of current month
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    // First day of next month
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
+
+    const orders = await ordersCollection.find({
+      Date: { $gte: startOfMonth, $lt: endOfMonth }
+    }).toArray();
+
+    res.json(orders);
+  } catch (err) {
+    console.error("Error fetching orders:", err);
+    res.status(500).json({ error: "Failed to fetch orders" });
+  }
+});
+
 
 // Get Orders by Date Range
 app.get("/api/orders/date-range", async (req, res) => {
@@ -247,6 +281,94 @@ app.get("/api/orders/by-date", async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+/* ---------------- SUPPLIER ROUTES ---------------- */
+
+app.get("/suppliers", async (req, res) => {
+  try {
+    const suppliers = await suppliersCollection.find().toArray();
+    res.json(suppliers);
+  } catch (err) {
+    console.error("Error fetching suppliers:", err);
+    res.status(500).json({ error: "Failed to fetch suppliers" });
+  }
+});
+
+app.post("/suppliers", async (req, res) => {
+  try {
+    const supplierData = {
+      name: req.body.name,
+      phoneNumber: req.body.phoneNumber,
+      address: req.body.address,
+      city: req.body.city,
+      pincode: req.body.pincode,
+      description: req.body.description,
+    };
+
+    const result = await suppliersCollection.insertOne(supplierData);
+    res.status(201).json({ message: "Supplier added", id: result.insertedId });
+  } catch (err) {
+    console.error("Error adding supplier:", err);
+    res.status(500).json({ error: "Failed to add supplier" });
+  }
+});
+
+app.get("/suppliers/:id", async (req, res) => {
+  try {
+    const supplier = await suppliersCollection.findOne({
+      _id: new ObjectId(req.params.id),
+    });
+
+    if (!supplier) return res.status(404).json({ error: "Supplier not found" });
+    res.json(supplier);
+  } catch (err) {
+    console.error("Error fetching supplier:", err);
+    res.status(500).json({ error: "Failed to fetch supplier" });
+  }
+});
+
+app.put("/suppliers/:id", async (req, res) => {
+  try {
+    const updatedData = {
+      name: req.body.name,
+      phoneNumber: req.body.phoneNumber,
+      address: req.body.address,
+      city: req.body.city,
+      pincode: req.body.pincode,
+      description: req.body.description,
+    };
+
+    const result = await suppliersCollection.updateOne(
+      { _id: new ObjectId(req.params.id) },
+      { $set: updatedData }
+    );
+
+    if (result.matchedCount === 0)
+      return res.status(404).json({ error: "Supplier not found" });
+
+    res.json({ message: "Supplier updated" });
+  } catch (err) {
+    console.error("Error updating supplier:", err);
+    res.status(500).json({ error: "Failed to update supplier" });
+  }
+});
+
+app.delete("/suppliers/:id", async (req, res) => {
+  try {
+    const result = await suppliersCollection.deleteOne({
+      _id: new ObjectId(req.params.id),
+    });
+
+    if (result.deletedCount === 0)
+      return res.status(404).json({ error: "Supplier not found" });
+
+    res.json({ message: "Supplier deleted" });
+  } catch (err) {
+    console.error("Error deleting supplier:", err);
+    res.status(500).json({ error: "Failed to delete supplier" });
+  }
+});
+
 
 /* ---------------- EXPORT FOR VERCEL ---------------- */
 module.exports = app;
