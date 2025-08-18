@@ -7,7 +7,7 @@ const dbName = "nexus_supermart";
 const productsCollectionName = "products";
 const customersCollectionName = "customers";
 const ordersCollectionName = "orders";
-const suppliersCollection = db.collection("suppliers");
+const suppliersCollection = "suppliers";
 
 const app = express();
 app.use(bodyParser.json());
@@ -29,6 +29,7 @@ let db;
 let productsCollection;
 let customersCollection;
 let ordersCollection;
+let suppliersCollections;
 
 // Sample data
 const sampleProducts = [
@@ -101,6 +102,7 @@ async function connectDB() {
   productsCollection = db.collection(productsCollectionName);
   customersCollection = db.collection(customersCollectionName);
   ordersCollection = db.collection(ordersCollectionName);
+  suppliersCollections = db.collection(suppliersCollection);
 
   // Insert sample data if empty
   if ((await productsCollection.countDocuments()) === 0) {
@@ -286,7 +288,7 @@ app.get("/api/orders/by-date", async (req, res) => {
 
 app.get("/suppliers", async (req, res) => {
   try {
-    const suppliers = await suppliersCollection.find().toArray();
+    const suppliers = await suppliersCollections.find().toArray();
     res.json(suppliers);
   } catch (err) {
     console.error("Error fetching suppliers:", err);
@@ -305,7 +307,7 @@ app.post("/suppliers", async (req, res) => {
       description: req.body.description,
     };
 
-    const result = await suppliersCollection.insertOne(supplierData);
+    const result = await suppliersCollections.insertOne(supplierData);
     res.status(201).json({ message: "Supplier added", id: result.insertedId });
   } catch (err) {
     console.error("Error adding supplier:", err);
@@ -315,7 +317,7 @@ app.post("/suppliers", async (req, res) => {
 
 app.get("/suppliers/:id", async (req, res) => {
   try {
-    const supplier = await suppliersCollection.findOne({
+    const supplier = await suppliersCollections.findOne({
       _id: new ObjectId(req.params.id),
     });
 
@@ -338,7 +340,7 @@ app.put("/suppliers/:id", async (req, res) => {
       description: req.body.description,
     };
 
-    const result = await suppliersCollection.updateOne(
+    const result = await suppliersCollections.updateOne(
       { _id: new ObjectId(req.params.id) },
       { $set: updatedData }
     );
@@ -355,7 +357,7 @@ app.put("/suppliers/:id", async (req, res) => {
 
 app.delete("/suppliers/:id", async (req, res) => {
   try {
-    const result = await suppliersCollection.deleteOne({
+    const result = await suppliersCollections.deleteOne({
       _id: new ObjectId(req.params.id),
     });
 
