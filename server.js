@@ -31,65 +31,7 @@ let customersCollection;
 let ordersCollection;
 let suppliersCollections;
 
-// Sample data
-const sampleProducts = [
-  {
-    id: "P001",
-    name: "Milk 1L",
-    Category: "Dairy",
-    QuantityOnHand: 120,
-    UnitDesc: "1 Litre Pack",
-    RetailPrice: 55,
-    SalePrice: 52,
-    MRP: 55,
-    UnitPrice: 52,
-    EANCode: "8901234567890",
-  },
-  {
-    id: "P002",
-    name: "Rice 5kg",
-    Category: "Grocery",
-    QuantityOnHand: 50,
-    UnitDesc: "5 Kilogram Bag",
-    RetailPrice: 450,
-    SalePrice: 420,
-    MRP: 450,
-    UnitPrice: 420,
-    EANCode: "8901234567891",
-  },
-  {
-    id: "P003",
-    name: "Sugar 1kg",
-    Category: "Grocery",
-    QuantityOnHand: 200,
-    UnitDesc: "1 Kilogram Pack",
-    RetailPrice: 45,
-    SalePrice: 42,
-    MRP: 45,
-    UnitPrice: 42,
-    EANCode: "8901234567892",
-  },
-  {
-    id: "P004",
-    name: "Toothpaste 200g",
-    Category: "Personal Care",
-    QuantityOnHand: 75,
-    UnitDesc: "200 Gram Tube",
-    RetailPrice: 100,
-    SalePrice: 95,
-    MRP: 100,
-    UnitPrice: 95,
-    EANCode: "8901234567893",
-  },
-];
 
-const sampleCustomers = [
-  { name: "John Doe", email: "kvjdhfjkshf", phone: "123-456-7890" },
-  { name: "Jane Smith", email: "fhgfgh", phone: "987-654-3210" },
-  { name: "Alice Johnson", email: "ghfghfgh", phone: "555-555-5555" },
-  { name: "Bob Brown", email: "ghfghfgh", phone: "444-444-4444" },
-  { name: "Charlie White", email: "ghfghfgh", phone: "333-333-3333" },
-];
 
 // Connect to DB and set up collections
 async function connectDB() {
@@ -203,17 +145,11 @@ app.post("/api/orders", async (req, res) => {
 
 app.get("/api/orders", async (req, res) => {
   try {
-    const now = new Date();
-
-    // First day of current month
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-
-    // First day of next month
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-
-    const orders = await ordersCollection.find({
-      Date: { $gte: startOfMonth, $lt: endOfMonth }
-    }).toArray();
+    const orders = await ordersCollection
+      .find({})
+      .sort({ _id: -1 })   // sort by newest first
+      .limit(50)           // only last 50 records
+      .toArray();
 
     res.json(orders);
   } catch (err) {
@@ -221,6 +157,7 @@ app.get("/api/orders", async (req, res) => {
     res.status(500).json({ error: "Failed to fetch orders" });
   }
 });
+
 
 app.get("/api/last-orders", async (req, res) => {
   try {
