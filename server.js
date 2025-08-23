@@ -385,15 +385,15 @@ app.post("/api/categories", async (req, res) => {
 
 });
 
-app.put("/api/categories/:id", async (req, res) => {
+app.put("/api/categories/:code", async (req, res) => {
   try {
     const updatedData = {
       name: req.body.name,
-      code: req.body.code,
+      code: req.body.code, // you may allow updating code too
     };
 
     const result = await categoriesCollectionObject.updateOne(
-      { _id: new ObjectId(req.params.id) },
+      { code: req.params.code },   // match on code
       { $set: updatedData }
     );
 
@@ -407,19 +407,23 @@ app.put("/api/categories/:id", async (req, res) => {
   }
 });
 
-app.delete("/api/categories/:id", async (req, res) => {
+
+app.delete("/api/categories/:code", async (req, res) => {
   try {
     const result = await categoriesCollectionObject.deleteOne({
-      _id: new ObjectId(req.params.id),
-    }); 
+      code: req.params.code,   // match on code
+    });
+
     if (result.deletedCount === 0)
       return res.status(404).json({ error: "Category not found" });
+
     res.json({ message: "Category deleted" });
   } catch (err) {
     console.error("Error deleting category:", err);
     res.status(500).json({ error: "Failed to delete category" });
-  } 
+  }
 });
+
 
 app.put("/suppliers/:id", async (req, res) => {
   try {
