@@ -8,6 +8,7 @@ const productsCollectionName = "products";
 const customersCollectionName = "customers";
 const ordersCollectionName = "orders";
 const suppliersCollection = "suppliers";
+const categoriesCollection = "categories";
 
 const app = express();
 app.use(bodyParser.json());
@@ -30,6 +31,7 @@ let productsCollection;
 let customersCollection;
 let ordersCollection;
 let suppliersCollections;
+let categoriesCollectionObject;
 
 
 
@@ -45,13 +47,94 @@ async function connectDB() {
   customersCollection = db.collection(customersCollectionName);
   ordersCollection = db.collection(ordersCollectionName);
   suppliersCollections = db.collection(suppliersCollection);
+  categoriesCollectionObject = db.collection(categoriesCollection);
 
-  // Insert sample data if empty
-  if ((await productsCollection.countDocuments()) === 0) {
-    await productsCollection.insertMany(sampleProducts);
+  // // Insert sample data if empty
+  // if ((await productsCollection.countDocuments()) === 0) {
+  //   await productsCollection.insertMany(sampleProducts);
+  // }
+
+const sampleCustomers = [
+  {
+    name: "Fresh Farms Ltd.",
+    phoneNumber: "9876543210",
+    address: "123 Market Street",
+    city: "Delhi",
+    pincode: "110001",
+    description: "Supplier of fresh fruits and vegetables"
+  },
+  {
+    name: "Daily Dairy Co.",
+    phoneNumber: "9123456780",
+    address: "45 Dairy Road",
+    city: "Mumbai",
+    pincode: "400001",
+    description: "Supplier of dairy products"
+  },
+  {
+    name: "Spice World",
+    phoneNumber: "9988776655",
+    address: "88 Spice Bazaar",
+    city: "Chennai",
+    pincode: "600001",
+    description: "Supplier of spices and condiments"
   }
-  if ((await customersCollection.countDocuments()) === 0) {
-    await customersCollection.insertMany(sampleCustomers);
+]
+
+const categories =[
+  { "name": "Stationary", "code": "STA001" },
+  { "name": "plastic", "code": "PLA001" },
+  { "name": "Rice", "code": "RIC001" },
+  { "name": "snacks", "code": "SNA001" },
+  { "name": "Food", "code": "FOO001" },
+  { "name": "Balm", "code": "BAL001" },
+  { "name": "Pooja Items", "code": "POO001" },
+  { "name": "Mob", "code": "MOB001" },
+  { "name": "Cleaning", "code": "CLE001" },
+  { "name": "Health item", "code": "HEA001" },
+  { "name": "Mosquito", "code": "MOS001" },
+  { "name": "oil", "code": "OIL001" },
+  { "name": "soap", "code": "SOA001" },
+  { "name": "Ice Cream", "code": "ICE001" },
+  { "name": "Naga", "code": "NAG001" },
+  { "name": "tea", "code": "TEA001" },
+  { "name": "washing", "code": "WAS001" },
+  { "name": "Face Cream", "code": "FAC001" },
+  { "name": "Battery", "code": "BAT001" },
+  { "name": "Vegtebles", "code": "VEG001" },
+  { "name": "Jawin", "code": "JAW001" },
+  { "name": "Talc Power", "code": "TAL001" },
+  { "name": "Cosmetics", "code": "COS001" },
+  { "name": "Shaving", "code": "SHA001" },
+  { "name": "Tooth paste", "code": "TOO001" },
+  { "name": "Tooth Brush", "code": "TOO002" },
+  { "name": "Milk Item", "code": "MIL001" },
+  { "name": "Hair Dye", "code": "HAI001" },
+  { "name": "agarbattis", "code": "AGA001" },
+  { "name": "Playing Items", "code": "PLA002" },
+  { "name": "Baby Item", "code": "BAB001" },
+  { "name": "Spray", "code": "SPR001" },
+  { "name": "Choclate", "code": "CHO001" },
+  { "name": "Own packing", "code": "OWN001" },
+  { "name": "Scissors", "code": "SCI001" },
+  { "name": "Surfe", "code": "SUR001" },
+  { "name": "Cooldrings", "code": "COO001" },
+  { "name": "Fiama", "code": "FIA001" },
+  { "name": "Annai brand", "code": "ANN001" },
+  { "name": "Fire Sick", "code": "FIR001" },
+  { "name": "Vicks", "code": "VIC001" },
+  { "name": "Udhayam", "code": "UDH001" },
+  { "name": "Bread", "code": "BRE001" },
+  { "name": "Sunfeast", "code": "SUN001" },
+  { "name": "Nestle", "code": "NES001" },
+  { "name": "paste", "code": "PAS001" },
+  { "name": "Birthday", "code": "BIR001" }
+]
+  if ((await categoriesCollectionObject.countDocuments()) === 0) {
+    await categoriesCollectionObject.insertMany(categories);
+  }
+  if ((await suppliersCollections.countDocuments()) === 0) {
+    await suppliersCollections.insertMany(sampleCustomers);
   }
 
   console.log("Connected to MongoDB");
@@ -143,6 +226,7 @@ app.post("/api/orders", async (req, res) => {
   }
 });
 
+
 app.get("/api/orders", async (req, res) => {
   try {
     const orders = await ordersCollection
@@ -233,15 +317,25 @@ app.get("/suppliers", async (req, res) => {
   }
 });
 
+// if ((await suppliersCollections.countDocuments()) === 0) {
+//   await suppliersCollections.insertMany();
+//   console.log("Inserted sample suppliers");
+// }
+
+
+
+
 app.post("/suppliers", async (req, res) => {
   try {
     const supplierData = {
       name: req.body.name,
       phoneNumber: req.body.phoneNumber,
+      contactPerson: req.body.contactPerson,
+      state: req.body.state,
       address: req.body.address,
       city: req.body.city,
       pincode: req.body.pincode,
-      description: req.body.description,
+      items: req.body.items,
     };
 
     const result = await suppliersCollections.insertOne(supplierData);
@@ -264,6 +358,67 @@ app.get("/suppliers/:id", async (req, res) => {
     console.error("Error fetching supplier:", err);
     res.status(500).json({ error: "Failed to fetch supplier" });
   }
+});
+
+app.get("/api/categories", async (req, res) => {
+  try {
+    const categories = await categoriesCollectionObject.find().toArray();
+    res.json(categories);
+  } catch (err) {
+    console.error("Error fetching categories:", err);
+    res.status(500).json({ error: "Failed to fetch categories" });
+  }
+});
+
+app.post("/api/categories", async (req, res) => {
+  try {
+    const categoryData = {
+      name: req.body.name,
+      code: req.body.code,
+    };
+    const result = await categoriesCollectionObject.insertOne(categoryData);
+    res.status(201).json({ message: "Category added", id: result.insertedId });
+  } catch (err) { 
+    console.error("Error adding category:", err);
+    res.status(500).json({ error: "Failed to add category" });
+  }
+
+});
+
+app.put("/api/categories/:id", async (req, res) => {
+  try {
+    const updatedData = {
+      name: req.body.name,
+      code: req.body.code,
+    };
+
+    const result = await categoriesCollectionObject.updateOne(
+      { _id: new ObjectId(req.params.id) },
+      { $set: updatedData }
+    );
+
+    if (result.matchedCount === 0)
+      return res.status(404).json({ error: "Category not found" });
+
+    res.json({ message: "Category updated" });
+  } catch (err) {
+    console.error("Error updating category:", err);
+    res.status(500).json({ error: "Failed to update category" });
+  }
+});
+
+app.delete("/api/categories/:id", async (req, res) => {
+  try {
+    const result = await categoriesCollectionObject.deleteOne({
+      _id: new ObjectId(req.params.id),
+    }); 
+    if (result.deletedCount === 0)
+      return res.status(404).json({ error: "Category not found" });
+    res.json({ message: "Category deleted" });
+  } catch (err) {
+    console.error("Error deleting category:", err);
+    res.status(500).json({ error: "Failed to delete category" });
+  } 
 });
 
 app.put("/suppliers/:id", async (req, res) => {
