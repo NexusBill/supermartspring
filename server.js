@@ -1,7 +1,8 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const { MongoClient, ObjectId, ServerApiVersion } = require("mongodb");
-
+const Razorpay = require("razorpay");
+const crypto = require("crypto");
 const uri = "mongodb+srv://SuperMart123:Askavi123@cluster0.iqiqbhm.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
 const dbName = "nexus_supermart";
 const productsCollectionName = "products";
@@ -466,6 +467,59 @@ app.delete("/suppliers/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to delete supplier" });
   }
 });
+
+
+
+// YOUR KEYS (TEST MODE)
+const razorpay = new Razorpay({
+  key_id: "rzp_test_Rhe1D8p5Mgfh6G",
+  key_secret: "XlyA4AZelos2A4T00U1Gd3CL"
+});
+
+
+app.post("/create-order", async (req, res) => {
+  try {
+    const { amount } = req.body;
+
+    const order = await razorpay.orders.create({
+      amount: amount, // IN PAISE
+      currency: "INR",
+      receipt: "receipt_" + Date.now(),
+    });
+
+    res.send(order);
+
+  } catch (err) {
+    res.status(500).send({ error: "Order creation failed", details: err });
+  }
+});
+
+app.post("/verify-payment", (req, res) => {
+  const { razorpay_order_id, razorpay_payment_id, razorpay_signature } = req.body;
+
+  const sign = razorpay_order_id + "|" + razorpay_payment_id;
+
+  const expectedSign = crypto
+    .createHmac("sha256", razorpay.key_secret)
+    .update(sign)
+    .digest("hex");
+
+  if (expectedSign === razorpay_signature) {
+    console.log("Payment Verified:", razorpay_payment_id);
+
+    res.json({
+      success: true,
+      message: "Payment verified successfully"
+    });
+  } else {
+    res.status(400).json({
+      success: false,
+      message: "Payment verification failed"
+    });
+  }
+});
+
+
 
 
 /* ---------------- EXPORT FOR VERCEL ---------------- */
