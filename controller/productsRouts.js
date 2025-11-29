@@ -47,7 +47,7 @@ router.get("/", async (req, res) => {
             skip,
             skip + limit
         );
-        return res.json(pagedData);
+        return res.json({data:pagedData,  total: productCache[clientCode].allProducts.length, page, limit});
     }
 
     console.log("⏳ CACHE MISS → Querying MongoDB:", clientCode);
@@ -62,7 +62,7 @@ router.get("/", async (req, res) => {
     };
 
     const pagedData = allProducts.slice(skip, skip + limit);
-    res.json(pagedData);
+    res.json({data:pagedData,  total: allProducts.length, page, limit});
 });
 
 /* ----------------------- GET SINGLE PRODUCT (FAST + CACHE) ----------------------- */
