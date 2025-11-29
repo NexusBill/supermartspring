@@ -93,15 +93,81 @@ router.get("/:id", async (req, res) => {
 
     res.json(product);
 });
+/* ----------------------- SEARCH PRODUCTS ----------------------- */
+router.get("/search", async (req, res) => {
+  try {
+    const clientCode = req.clientCode;
+    const { q } = req.query; // search term
+
+    if (!q) {
+      return res.status(400).json({ error: "Search query missing" });
+    }
+
+    // Clean search string
+    const searchText = q.trim();
+
+    // Build search query
+    const searchQuery = {
+      $or: [
+        { _id: ObjectId.isValid(searchText) ? new ObjectId(searchText) : null },
+        { qrcode: searchText },
+        { name: { $regex: searchText, $options: "i" } },
+        { category: { $regex: searchText, $options: "i" } }
+      ]
+    };
+
+    // Remove null _id match if searchText isn't ObjectId
+    if (!ObjectId.isValid(searchText)) {
+      delete searchQuery.$or[0]; // remove _id condition
+    }
+
+    // Remove empty conditions
+    searchQuery.$or = searchQuery.$or.filter(Boolean);
+
+    // Perform DB search
+    const results = await req.productsCollection.find(searchQuery).toArray();
+
+    res.json(results);
+
+  } catch (err) {
+    console.error("Search error:", err);
+    res.status(500).json({ error: "Failed to search products" });
+  }
+});
 
 /* ----------------------- ADD PRODUCT ----------------------- */
 router.post("/", async (req, res) => {
+  try {
+    const { qrcode } = req.body.qrcode;
+
+    // 🔍 STEP 1: If qrcode present → validate uniqueness
+    if (qrcode) {
+      const existing = await req.productsCollection.findOne({ qrcode });
+
+      if (existing) {
+        return res.status(400).json({
+          error: "QR Code already exists. Choose another."
+        });
+      }
+    }
+
+    // 🔍 STEP 2: Insert product
     const result = await req.productsCollection.insertOne(req.body);
 
-    delete productCache[req.clientCode]; // invalidate cache
+    // Clear cache
+    delete productCache[req.clientCode];
 
-    res.status(201).json({ message: "Product added", id: result.insertedId });
+    res.status(201).json({
+      message: "Product added",
+      id: result.insertedId
+    });
+
+  } catch (err) {
+    console.error("Error adding product:", err);
+    res.status(500).json({ error: "Failed to add product" });
+  }
 });
+
 
 /* ----------------------- UPDATE PRODUCT ----------------------- */
 router.put("/:id", async (req, res) => {
