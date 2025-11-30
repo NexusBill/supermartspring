@@ -109,31 +109,59 @@ router.get("/", async (req, res) => {
   });
 });
 
-/* ----------------------- GET ONE ORDER ----------------------- */
-router.get("/:id", async (req, res) => {
-  const clientCode = req.clientCode;
-  const id = req.params.id;
 
-  // Check cache first
+router.get("/order-by-id/:id", async (req, res) => {
+  const clientCode = req.clientCode;
+  const id = (req.params.id);
+
+  // Cache
   if (
     orderCache[clientCode] &&
     Date.now() - orderCache[clientCode].timestamp < CACHE_TTL
   ) {
     const order = orderCache[clientCode].allOrders.find(
-      (o) => o._id.toString() === id
+      (o) => o.orderId === id
     );
-
     if (order) return res.json(order);
   }
 
-  const order = await req.ordersCollection.findOne({
-    _id: new ObjectId(id)
-  });
+  const order = await req.ordersCollection.findOne({ orderId: id });
 
   if (!order) return res.status(404).json({ error: "Order not found" });
 
   res.json(order);
 });
+
+/* ----------------------- GET ONE ORDER ----------------------- */
+router.get("/order-by-customers/:id", async (req, res) => {
+  const clientCode = req.clientCode;
+  const id = Number(req.params.id); // Convert to NUMBER
+
+  // Cache check
+  if (
+    orderCache[clientCode] &&
+    Date.now() - orderCache[clientCode].timestamp < CACHE_TTL
+  ) {
+    const order = orderCache[clientCode].allOrders.find(
+      (o) => o.customerId === id
+    );
+
+    if (order) return res.json(order);
+  }
+
+  // DB fetch for ALL orders of that customer
+  const orders = await req.ordersCollection
+    .find({ customerId: id })
+    .toArray();
+
+  if (!orders || orders.length === 0) {
+    return res.status(404).json({ error: "Orders not found for this customerId" });
+  }
+
+  res.json(orders);
+});
+
+
 
 /* ----------------------- ADD ORDER ----------------------- */
 /* ----------------------- ADD ORDER (with auto orderId) ----------------------- */
