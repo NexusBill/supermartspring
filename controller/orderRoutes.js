@@ -149,13 +149,13 @@ router.post("/", async (req, res) => {
 
     const order = {
       orderId,    // 🔥 Auto generated
-      invoice: req.body.invoice,
-      customerId: req.body.customerId,
+      invoice: req.body.invoice || "",
+      customerId: req.body.customerId || "",
       customer: req.body.customer,
       mobile: req.body.mobile,
       amount: req.body.amount,
       discount: req.body.discount,
-      savings: req.body.savings,
+      savings: req.body.savings || 0,
       date: req.body.date,
       amountPaid: req.body.amountPaid,
       paymentMode: req.body.paymentMode,
