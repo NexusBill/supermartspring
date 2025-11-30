@@ -102,9 +102,9 @@ router.get("/:id", async (req, res) => {
 /* ----------------------- ADD CUSTOMER ----------------------- */
 router.post("/", async (req, res) => {
   try {
-    const { customerId, name, mobile, password, address ,points} = req.body;
+    const { name, mobile, password, address, points } = req.body;
 
-    // 🔍 STEP 1: Check if mobile already exists
+    // STEP 1: Check if mobile exists
     const existingCustomer = await req.customersCollection.findOne({ mobile });
 
     if (existingCustomer) {
@@ -113,27 +113,42 @@ router.post("/", async (req, res) => {
       });
     }
 
-    // STEP 2: Create new customer
+    // STEP 2: Fetch latest customerId
+    const lastCustomer = await req.customersCollection
+      .find({})
+      .sort({ customerId: -1 })
+      .limit(1)
+      .toArray();
+
+    let newCustomerId = 1001; // start number
+    if (lastCustomer.length > 0) {
+      newCustomerId = lastCustomer[0].customerId + 1;
+    }
+
+    // STEP 3: Create customer data
     const customer = {
-      customerId,
+      customerId: newCustomerId,
       name,
       mobile,
       password,
       address: address || "",
       status: "active",
+      points: points || 0,
       createdAt: new Date(),
-      updatedAt: new Date(),
-      points: points || 0
+      updatedAt: new Date()
     };
 
+    // STEP 4: Save to DB
     const result = await req.customersCollection.insertOne(customer);
 
-    // STEP 3: Clear cache
+    // STEP 5: Clear cache
     delete customerCache[req.clientCode];
 
+    // STEP 6: Return response
     res.status(201).json({
       message: "Customer added successfully",
-      id: result.insertedId
+      id: result.insertedId,
+      customerId: newCustomerId
     });
 
   } catch (err) {
@@ -141,6 +156,7 @@ router.post("/", async (req, res) => {
     res.status(500).json({ error: "Failed to add customer" });
   }
 });
+
 
 
 /* ----------------------- UPDATE CUSTOMER ----------------------- */
