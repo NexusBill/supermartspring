@@ -2,7 +2,9 @@ const express = require("express");
 const router = express.Router({ mergeParams: true });
 const { ObjectId } = require("mongodb");
 const getTenantDB = require("../databaseConnectins/tenantDb");
-
+const fs = require("fs");
+const path = require("path");
+const sendEmail = require("./emailService");
 /* ---------------- ORDER CACHE ---------------- */
 const orderCache = {}; 
 const CACHE_TTL = 2 * 60 * 1000; // 2 minutes
@@ -99,9 +101,14 @@ router.get("/:id", async (req, res) => {
 });
 
 /* ----------------------- ADD ORDER ----------------------- */
+/* ----------------------- ADD ORDER (with auto orderId) ----------------------- */
 router.post("/", async (req, res) => {
   try {
+    // Generate order ID
+    const orderId = await generateOrderId(req.ordersCollection);
+
     const order = {
+      orderId,    // 🔥 Auto generated
       invoice: req.body.invoice,
       customerId: req.body.customerId,
       customer: req.body.customer,
@@ -114,19 +121,49 @@ router.post("/", async (req, res) => {
       paymentMode: req.body.paymentMode,
       orderBy: req.body.orderBy,
       deliveryAddress: req.body.deliveryAddress,
-      products: req.body.products || []
+      products: req.body.products || [],
+      status: "pending",          // default
+      createdAt: new Date(),      // auto timestamp
+      updatedAt: new Date()
     };
 
     const result = await req.ordersCollection.insertOne(order);
 
-    delete orderCache[req.clientCode]; // invalidate cache
+    delete orderCache[req.clientCode];
 
-    res.status(201).json({ message: "Order added", id: result.insertedId });
+    res.status(201).json({
+      message: "Order added",
+      id: result.insertedId,
+      orderId: orderId  // 🟢 Returning generated orderId
+    });
   } catch (err) {
     console.error("Error adding order:", err);
     res.status(500).json({ error: "Failed to add order" });
   }
 });
+async function generateOrderId(collection) {
+  const year = new Date().getFullYear();
+
+  // Find last order of this year
+  const lastOrder = await collection
+    .find({ orderId: { $regex: `^ORD${year}` } })
+    .sort({ _id: -1 })
+    .limit(1)
+    .toArray();
+
+  let lastNumber = 0;
+
+  if (lastOrder.length > 0) {
+    lastNumber = parseInt(lastOrder[0].orderId.substring(7)); 
+    // ORD202501 → substring(7) = 01
+  }
+
+  const newNumber = lastNumber + 1;
+  const padded = String(newNumber).padStart(2, "0"); // 01, 02, 03
+
+  return `ORD${year}${padded}`;
+}
+
 
 /* ----------------------- UPDATE ORDER ----------------------- */
 router.put("/:id", async (req, res) => {

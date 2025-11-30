@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8" />
+  <title>New Order Received</title>
+  <style>
+    body {
+      background: #f7f7f7;
+      padding: 0;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    .container {
+      background: #ffffff;
+      width: 600px;
+      margin: auto;
+      border-radius: 8px;
+      padding: 20px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h2 {
+      color: #222;
+      border-bottom: 2px solid #f1f1f1;
+      padding-bottom: 8px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 15px;
+    }
+    table th, table td {
+      padding: 10px;
+      border-bottom: 1px solid #eee;
+      text-align: left;
+      font-size: 14px;
+    }
+    .total {
+      font-size: 16px;
+      font-weight: bold;
+      color: #000;
+    }
+    .footer {
+      text-align: center;
+      font-size: 12px;
+      color: #888;
+      margin-top: 20px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <h2>🛒 New Order Received</h2>
+
+    <p><b>Order ID:</b> {{orderId}}</p>
+    <p><b>Customer Name:</b> {{customerName}}</p>
+    <p><b>Phone:</b> {{customerPhone}}</p>
+    <p><b>Address:</b> {{customerAddress}}</p>
+
+    <h3>Order Items:</h3>
+    <table>
+      <thead>
+        <tr>
+          <th>Product</th>
+          <th>Qty</th>
+          <th>Price (₹)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{orderItems}}
+      </tbody>
+    </table>
+
+    <p class="total">Total Amount: ₹{{total}}</p>
+
+    <div class="footer">
+      <p>SuperMart Grocery Store</p>
+    </div>
+  </div>
+</body>
+</html>
