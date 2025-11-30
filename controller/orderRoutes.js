@@ -5,6 +5,8 @@ const getTenantDB = require("../databaseConnectins/tenantDb");
 const fs = require("fs");
 const path = require("path");
 const sendEmail = require("./emailService");
+const { readTenants } = require("../Util/jsonStore");
+
 /* ---------------- ORDER CACHE ---------------- */
 const orderCache = {}; 
 const CACHE_TTL = 2 * 60 * 1000; // 2 minutes
@@ -29,6 +31,39 @@ const loadOrdersCollection = async (req, res, next) => {
 };
 
 router.use(loadOrdersCollection);
+
+router.post("/send-email", async (req, res) => {
+  try {
+    const {
+      to,
+      subject,
+      message
+    } = req.body;
+
+    // Read HTML template
+    let html = fs.readFileSync(
+      path.join(__dirname, "templates/dynamicMessage.html"),
+      "utf8"
+    );
+
+   
+
+    // Replace placeholders
+    html = html
+      .replace("{{message}}", message)
+
+    // Admin email
+
+    // Send email
+    await sendEmail(to,subject, html);
+
+    res.json({ success: true, message: "Email sent successfully" });
+  } catch (err) {
+    console.error("Email sending error:", err);
+    res.status(500).json({ error: "Failed to send email" });
+  }
+});
+
 
 /* ----------------------- GET ALL ORDERS (pagination + cache) ----------------------- */
 router.get("/", async (req, res) => {
@@ -106,6 +141,11 @@ router.post("/", async (req, res) => {
   try {
     // Generate order ID
     const orderId = await generateOrderId(req.ordersCollection);
+        const clientCode = req.params.clientCode;
+
+  const tenants = readTenants();
+  const tenant = tenants[clientCode];
+  const adminEmail = tenant ? tenant.email : "";
 
     const order = {
       orderId,    // 🔥 Auto generated
@@ -127,6 +167,43 @@ router.post("/", async (req, res) => {
       updatedAt: new Date()
     };
 
+     try{  // Read HTML template
+    let html = fs.readFileSync(
+      path.join(__dirname, "templates/orderEmail.html"),
+      "utf8"
+    );
+
+    // Convert items to HTML rows
+    const rows = req.body.products
+      .map(
+        (i) => `
+        <tr>
+          <td>${i.name}</td>
+          <td>${i.qty}</td>
+          <td>₹${i.price}</td>
+        </tr>
+      `
+      )
+      .join("");
+
+    // Replace placeholders
+    html = html
+      .replace("{{orderId}}", orderId)
+      .replace("{{customerName}}",  req.body.customer)
+      .replace("{{customerPhone}}",  req.body.mobile)
+      .replace("{{customerAddress}}",  req.body.deliveryAddress)
+      .replace("{{orderItems}}", rows)
+      .replace("{{total}}", req.body.amount);
+
+        const adminEmaill = "nexusbills.official@gmail.com";
+
+    // Send email
+    await sendEmail(adminEmaill, `🛒 New Order #${orderId}`, html);
+
+  } catch (err) {
+    console.error("Email sending error:", err);
+    res.status(500).json({ error: "Failed to send email" });
+  }
     const result = await req.ordersCollection.insertOne(order);
 
     delete orderCache[req.clientCode];
@@ -207,5 +284,6 @@ router.delete("/:id", async (req, res) => {
     res.status(500).json({ error: "Failed to delete order" });
   }
 });
+
 
 module.exports = router;

@@ -1,6 +1,7 @@
 {
   "nexus_supermart": {
    "cluster": "mongodb+srv://SuperMart123:Askavi123@cluster0.iqiqbhm.mongodb.net/nexus_supermart?retryWrites=true&w=majority&appName=Cluster0",
+   "email": "nexubills.official@gmail.com",
     "users": [
       { "id": "cst001", "pass": "1234", "role": "admin" },
       { "id": "cst002", "pass": "1234", "role": "biller" }
