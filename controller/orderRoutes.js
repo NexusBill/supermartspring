@@ -269,7 +269,27 @@ async function generateOrderId(collection) {
   return `ORD${year}${padded}`;
 }
 
+router.put("/status-update/:id", async (req, res) => {
+  try {
+    const update = req.body.status
+   
 
+    const result = await req.ordersCollection.updateOne(
+      { orderId: req.params.id },
+      { $set:{status:update}  }
+    );
+
+    delete orderCache[req.clientCode]; // invalidate cache
+
+    if (result.matchedCount === 0)
+      return res.status(404).json({ error: "Order not found" });
+
+    res.json({ message: "Order updated" });
+  } catch (err) {
+    console.error("Error updating order:", err);
+    res.status(500).json({ error: "Failed to update order" });
+  }
+});
 /* ----------------------- UPDATE ORDER ----------------------- */
 router.put("/:id", async (req, res) => {
   try {
