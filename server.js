@@ -492,8 +492,8 @@ const tenantRoutes = require("./controller/tenantRoute");
 const ordersRoutes = require("./controller/orderRoutes");
 const customerRoutes = require("./controller/customerRoutes");
 
-app.use(express.json());
-app.use("/api", tenantRoutes);
+
+// CORS Middleware
 app.use((req, res, next) => {
   res.header("Access-Control-Allow-Origin", "*");
   res.header(
@@ -503,6 +503,8 @@ app.use((req, res, next) => {
   res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
   next();
 });
+app.use(express.json());
+app.use("/api", tenantRoutes);
 // multitenant path route
 app.use("/api/:clientCode/products", productRoutes);
 app.use("/api/:clientCode/categories", categoryRoute);
