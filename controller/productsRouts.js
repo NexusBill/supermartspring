@@ -184,6 +184,40 @@ router.put("/:id", async (req, res) => {
     res.json({ message: "Updated" });
 });
 
+router.put("/products/images/bulk", async (req, res) => {
+  try {
+    const { products } = req.body;
+
+    if (!Array.isArray(products) || products.length === 0) {
+      return res.status(400).json({ error: "Products list required" });
+    }
+
+    const bulkOps = products.map(p => ({
+      updateOne: {
+        filter: { _id: new ObjectId(p._id) },
+        update: {
+          $set: {
+            isImageUploaded: true,
+            imageName: p.imageName
+          }
+        }
+      }
+    }));
+
+    const result = await req.productsCollection.bulkWrite(bulkOps);
+
+    res.json({
+      message: "Bulk image update successful",
+      matched: result.matchedCount,
+      modified: result.modifiedCount
+    });
+
+  } catch (err) {
+    console.error("Bulk update error:", err);
+    res.status(500).json({ error: "Bulk update failed" });
+  }
+});
+
 /* ----------------------- DELETE PRODUCT ----------------------- */
 router.delete("/:id", async (req, res) => {
     const result = await req.productsCollection.deleteOne({
