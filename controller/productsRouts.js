@@ -186,7 +186,8 @@ router.put("/:id", async (req, res) => {
 
 router.put("/products/images/bulk", async (req, res) => {
   try {
-    const { products } = req.body;
+    const products  = req.body.products; // Expecting { products: [ {_id, imageName}, ... ] }
+    const name = req.body.name;
 
     if (!Array.isArray(products) || products.length === 0) {
       return res.status(400).json({ error: "Products list required" });
@@ -198,7 +199,7 @@ router.put("/products/images/bulk", async (req, res) => {
         update: {
           $set: {
             isImageUploaded: true,
-            imageName: p.imageName
+            imageName: name || p.imageName
           }
         }
       }
