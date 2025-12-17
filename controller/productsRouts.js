@@ -94,37 +94,33 @@ router.get("/:id", async (req, res) => {
     res.json(product);
 });
 /* ----------------------- SEARCH PRODUCTS ----------------------- */
-router.get("/search/:query", async (req, res) => {
+
+router.get("/search", async (req, res) => {
   try {
-    const  q  = req.params.query; // search term
+    const q = req.query.query;
 
     if (!q) {
       return res.status(400).json({ error: "Search query missing" });
     }
 
-    // Clean search string
     const searchText = q.trim();
+    const orConditions = [];
 
-    // Build search query
-    const searchQuery = {
-      $or: [
-        { _id: ObjectId.isValid(searchText) ? new ObjectId(searchText) : null },
-        { qrcode: searchText },
-        { name: { $regex: searchText, $options: "i" } },
-        { category: { $regex: searchText, $options: "i" } }
-      ]
-    };
-
-    // Remove null _id match if searchText isn't ObjectId
-    if (!ObjectId.isValid(searchText)) {
-      delete searchQuery.$or[0]; // remove _id condition
+    // Add ObjectId search ONLY if valid
+    if (ObjectId.isValid(searchText)) {
+      orConditions.push({ _id: new ObjectId(searchText) });
     }
 
-    // Remove empty conditions
-    searchQuery.$or = searchQuery.$or.filter(Boolean);
+    // Other searchable fields
+    orConditions.push(
+      { qrcode: searchText },
+      { name: { $regex: searchText, $options: "i" } },
+      { category: { $regex: searchText, $options: "i" } }
+    );
 
-    // Perform DB search
-    const results = await req.productsCollection.find(searchQuery).toArray();
+    const results = await req.productsCollection
+      .find({ $or: orConditions })
+      .toArray();
 
     res.json(results);
 

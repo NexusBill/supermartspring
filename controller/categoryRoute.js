@@ -82,7 +82,7 @@ router.post("/", async (req, res) => {
     try {
         const categoryData = {
             name: req.body.name,
-            code: req.body.code,
+          
         };
 
         const result = await req.categoriesCollection.insertOne(categoryData);
@@ -101,7 +101,6 @@ router.put("/:code", async (req, res) => {
     try {
         const updatedData = {
             name: req.body.name,
-            code: req.body.code,
         };
 
         const result = await req.categoriesCollection.updateOne(
