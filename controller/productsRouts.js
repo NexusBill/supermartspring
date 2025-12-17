@@ -66,61 +66,51 @@ router.get("/", async (req, res) => {
 });
 
 /* ----------------------- GET SINGLE PRODUCT (FAST + CACHE) ----------------------- */
-router.get("/:id", async (req, res) => {
-    const clientCode = req.clientCode;
-    const productId = req.params.id;
+// router.get("/:id", async (req, res) => {
+//     const clientCode = req.clientCode;
+//     const productId = req.params.id;
 
-    // If cached → pull item from cache (super fast)
-    if (
-        productCache[clientCode] &&
-        Date.now() - productCache[clientCode].timestamp < CACHE_TTL
-    ) {
-        console.log("⚡ CACHE HIT (single product)");
+//     // If cached → pull item from cache (super fast)
+//     if (
+//         productCache[clientCode] &&
+//         Date.now() - productCache[clientCode].timestamp < CACHE_TTL
+//     ) {
+//         console.log("⚡ CACHE HIT (single product)");
 
-        const cachedProduct = productCache[clientCode].allProducts.find(
-            (p) => p._id.toString() === productId
-        );
+//         const cachedProduct = productCache[clientCode].allProducts.find(
+//             (p) => p._id.toString() === productId
+//         );
 
-        if (cachedProduct) return res.json(cachedProduct);
-    }
+//         if (cachedProduct) return res.json(cachedProduct);
+//     }
 
-    // If not in cache → fetch from DB
-    const product = await req.productsCollection.findOne({
-        _id: new ObjectId(productId),
-    });
+//     // If not in cache → fetch from DB
+//     const product = await req.productsCollection.findOne({
+//         _id: new ObjectId(productId),
+//     });
 
-    if (!product) return res.status(404).json({ error: "Not found" });
+//     if (!product) return res.status(404).json({ error: "Not found" });
 
-    res.json(product);
-});
+//     res.json(product);
+// });
 /* ----------------------- SEARCH PRODUCTS ----------------------- */
 
 router.get("/search", async (req, res) => {
   try {
     const q = req.query.query;
-
-    if (!q) {
+console.log("Search query:", q);
+    if (!q || !q.trim()) {
       return res.status(400).json({ error: "Search query missing" });
     }
 
     const searchText = q.trim();
-    const orConditions = [];
 
-    // Add ObjectId search ONLY if valid
-    if (ObjectId.isValid(searchText)) {
-      orConditions.push({ _id: new ObjectId(searchText) });
-    }
-
-    // Other searchable fields
-    orConditions.push(
-      { qrcode: searchText },
-      { name: { $regex: searchText, $options: "i" } },
-      { category: { $regex: searchText, $options: "i" } }
-    );
-
-    const results = await req.productsCollection
-      .find({ $or: orConditions })
-      .toArray();
+    const results = await req.productsCollection.find({
+      $or: [
+        { name: { $regex: searchText, $options: "i" } },
+        { category: { $regex: searchText, $options: "i" } }
+      ]
+    }).toArray();
 
     res.json(results);
 
@@ -129,6 +119,7 @@ router.get("/search", async (req, res) => {
     res.status(500).json({ error: "Failed to search products" });
   }
 });
+
 
 /* ----------------------- ADD PRODUCT ----------------------- */
 router.post("/", async (req, res) => {
