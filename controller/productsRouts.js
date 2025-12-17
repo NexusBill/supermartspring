@@ -94,10 +94,9 @@ router.get("/:id", async (req, res) => {
     res.json(product);
 });
 /* ----------------------- SEARCH PRODUCTS ----------------------- */
-router.get("/search", async (req, res) => {
+router.get("/search/:query", async (req, res) => {
   try {
-    const clientCode = req.clientCode;
-    const { q } = req.query; // search term
+    const  q  = req.params.query; // search term
 
     if (!q) {
       return res.status(400).json({ error: "Search query missing" });
@@ -199,7 +198,7 @@ router.put("/products/images/bulk", async (req, res) => {
         update: {
           $set: {
             isImageUploaded: true,
-            imageName: name || p.imageName
+            imageName: name 
           }
         }
       }
