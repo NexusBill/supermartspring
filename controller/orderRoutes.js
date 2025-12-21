@@ -73,7 +73,7 @@ router.get("/", async (req, res) => {
   let limit = parseInt(req.query.limit) || 20;
   let skip = (page - 1) * limit;
 
-  // Cache hit
+  // ⚡ CACHE HIT
   if (
     orderCache[clientCode] &&
     Date.now() - orderCache[clientCode].timestamp < CACHE_TTL
@@ -92,7 +92,11 @@ router.get("/", async (req, res) => {
 
   console.log("⏳ ORDER CACHE MISS → Querying DB");
 
-  const allOrders = await req.ordersCollection.find().toArray();
+  // 🔥 SORT DESCENDING
+  const allOrders = await req.ordersCollection
+    .find()
+    .sort({ createdAt: -1 }) // OR { date: -1 }
+    .toArray();
 
   orderCache[clientCode] = {
     allOrders,
@@ -108,6 +112,7 @@ router.get("/", async (req, res) => {
     limit
   });
 });
+
 
 
 router.get("/order-by-id/:id", async (req, res) => {
