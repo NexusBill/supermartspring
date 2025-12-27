@@ -120,25 +120,23 @@ router.delete("/tenant/:tenant/users/:id", (req, res) => {
 /* ---------------- LOGIN  ---------------- */
 
 // Login API
-router.post("/tenant/:tenant/login", (req, res) => {
+router.post("/tenant/login", (req, res) => {
   const { id, pass } = req.body;
 
   const tenants = readTenants();
-  const tenant = tenants[req.params.tenant];
+  const tenant = tenants[id];
 
   if (!tenant)
     return res.status(404).json({ error: "Tenant not found" });
 
-  const user = tenant.users.find(u => u.id === id && u.pass === pass);
 
-  if (!user)
+  if (tenant.password !== pass)
     return res.status(401).json({ error: "Invalid credentials" });
 
   res.json({
     message: "Login successful",
-    role: user.role,
-    userId: user.id,
-    tenant: req.params.tenant
+    tenant: id,
+    name: tenant.name
   });
 });
 

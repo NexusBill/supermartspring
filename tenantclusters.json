@@ -2,6 +2,8 @@
   "nexus_supermart": {
    "cluster": "mongodb+srv://SuperMart123:Askavi123@cluster0.iqiqbhm.mongodb.net/nexus_supermart?retryWrites=true&w=majority&appName=Cluster0",
    "email": "nexubills.official@gmail.com",
+   "password": "SuperMart@123",
+   "name": "Nexus Supermart",
     "users": [
       { "id": "cst001", "pass": "1234", "role": "admin" },
       { "id": "cst002", "pass": "1234", "role": "biller" }
@@ -9,6 +11,9 @@
   },
   "kamatchi": {
     "cluster": "ghjgdhjghjs",
+    "email": "kamatchi.official@gmail.com",
+    "password": "kamatchi@123",
+    "name": "Kamatchi Supermart",
     "users": [
       { "id": "cst001", "pass": "1234", "role": "admin" },
       { "id": "cst002", "pass": "1234", "role": "biller" }
@@ -16,6 +21,9 @@
   },
    "a2j": {
     "cluster": "mongodb+srv://nexus_root:12345@cluster0.i1azw1p.mongodb.net/${clientCode}?retryWrites=true&w=majority&appName=Cluster0",
+    "email": "a2j.official@gmail.com",
+    "password": "a2j@123",
+    "name": "A2J Supermart",
     "users": [
       { "id": "cst001", "pass": "1234", "role": "admin" },
       { "id": "cst002", "pass": "1234", "role": "biller" }
