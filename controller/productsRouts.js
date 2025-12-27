@@ -156,7 +156,25 @@ router.post("/", async (req, res) => {
     res.status(500).json({ error: "Failed to add product" });
   }
 });
+ router.post("/bulk", async (req, res) => {
+    try {
+        const products = req.body.products; // Expecting { products: [ {...}, {...} ] }
+        if (!Array.isArray(products) || products.length === 0) {
+            return res.status(400).json({ error: "Products list required" });
+        }
+        const result = await req.productsCollection.insertMany(products);
 
+        delete productCache[req.clientCode]; // invalidate cache
+        res.status(201).json({
+            message: "Bulk products added",
+            insertedCount: result.insertedCount,
+            insertedIds: result.insertedIds
+        });
+    } catch (err) {
+        console.error("Bulk insert error:", err);
+        res.status(500).json({ error: "Bulk insert failed" });
+    }
+});
 
 /* ----------------------- UPDATE PRODUCT ----------------------- */
 router.put("/:id", async (req, res) => {
