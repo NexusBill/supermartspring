@@ -123,7 +123,10 @@ console.log("Search query:", q);
 
 /* ----------------------- ADD PRODUCT ----------------------- */
 router.post("/", async (req, res) => {
+
+
   try {
+    if (req.body.qrcode) {
     const { qrcode } = req.body.qrcode;
 
     // 🔍 STEP 1: If qrcode present → validate uniqueness
@@ -136,7 +139,7 @@ router.post("/", async (req, res) => {
         });
       }
     }
-
+  }
     // 🔍 STEP 2: Insert product
     const result = await req.productsCollection.insertOne(req.body);
 
