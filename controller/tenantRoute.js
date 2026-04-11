@@ -122,9 +122,12 @@ router.delete("/tenant/:tenant/users/:id", (req, res) => {
 // Login API
 router.post("/tenant/login", (req, res) => {
   const { id, pass } = req.body;
+console.log("Login request received for user:", id);
 
   const tenants = readTenants();
+  console.log("Login attempt for user:", tenants);
   const tenant = tenants[id];
+  console.log("Tenant found:", tenant);
 
   if (!tenant)
     return res.status(404).json({ error: "Tenant not found" });

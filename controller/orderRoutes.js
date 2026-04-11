@@ -339,4 +339,127 @@ router.delete("/:id", async (req, res) => {
 });
 
 
+router.get("/top-selling-range", async (req, res) => {
+  try {
+    const { from, to, limit = 5 } = req.query;
+
+    // ❗ Validate input
+    if (!from || !to) {
+      return res.status(400).json({ error: "from and to dates are required" });
+    }
+
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+
+    // include full end day
+    toDate.setHours(23, 59, 59, 999);
+
+    const topProducts = await req.ordersCollection.aggregate([
+
+      // ✅ Step 1: Filter by date range
+      {
+        $match: {
+          createdAt: { $gte: fromDate, $lte: toDate },
+          status: { $ne: "cancelled" } // ignore cancelled
+        }
+      },
+
+      // ✅ Step 2: explode products array
+      { $unwind: "$products" },
+
+      // ✅ Step 3: group by product name
+      {
+        $group: {
+          _id: "$products.name",
+          totalSold: { $sum: "$products.qty" },
+          totalRevenue: { $sum: "$products.total" }
+        }
+      },
+
+      // ✅ Step 4: sort
+      { $sort: { totalSold: -1 } },
+
+      // ✅ Step 5: limit
+      { $limit: parseInt(limit) },
+
+      // ✅ Step 6: clean response
+      {
+        $project: {
+          _id: 0,
+          name: "$_id",
+          totalSold: 1,
+          totalRevenue: 1
+        }
+      }
+
+    ]).toArray();
+
+    res.json({
+      from,
+      to,
+      data: topProducts
+    });
+
+  } catch (err) {
+    console.error("Top selling range error:", err);
+    res.status(500).json({ error: "Failed to fetch top selling products" });
+  }
+});
+
+router.get("/orders-by-date-range", async (req, res) => {
+  try {
+    const { from, to, page = 1, limit = 20 } = req.query;
+
+    // ❗ validation
+    if (!from || !to) {
+      return res.status(400).json({ error: "from and to dates are required" });
+    }
+
+    const fromDate = new Date(from);
+    const toDate = new Date(to);
+
+    // include full end day
+    toDate.setHours(23, 59, 59, 999);
+
+    const pageNumber = parseInt(page);
+    const limitNumber = parseInt(limit);
+    const skip = (pageNumber - 1) * limitNumber;
+
+    const query = {
+      createdAt: {
+        $gte: fromDate,
+        $lte: toDate
+      }
+      // 👉 optional:
+      // status: { $ne: "cancelled" }
+    };
+
+    // ✅ total count
+    const total = await req.ordersCollection.countDocuments(query);
+
+    // ✅ paginated data
+    const orders = await req.ordersCollection
+      .find(query)
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limitNumber)
+      .toArray();
+
+    res.json({
+      from,
+      to,
+      total,
+      page: pageNumber,
+      limit: limitNumber,
+      totalPages: Math.ceil(total / limitNumber),
+      data: orders
+    });
+
+  } catch (err) {
+    console.error("Fetch orders error:", err);
+    res.status(500).json({ error: "Failed to fetch orders" });
+  }
+});
+
+
 module.exports = router;
