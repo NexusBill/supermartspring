@@ -37,20 +37,20 @@ router.get("/", async (req, res) => {
     let skip = (page - 1) * limit;
 
     // If cache exists and still valid → return cached paginated data
-    if (
-        productCache[clientCode] &&
-        Date.now() - productCache[clientCode].timestamp < CACHE_TTL
-    ) {
-        console.log("⚡ CACHE HIT:", clientCode);
+    // if (
+    //     productCache[clientCode] &&
+    //     Date.now() - productCache[clientCode].timestamp < CACHE_TTL
+    // ) {
+    //     console.log("⚡ CACHE HIT:", clientCode);
 
-        const pagedData = productCache[clientCode].allProducts.slice(
-            skip,
-            skip + limit
-        );
-        return res.json({data:pagedData,  total: productCache[clientCode].allProducts.length, page, limit});
-    }
+    //     const pagedData = productCache[clientCode].allProducts.slice(
+    //         skip,
+    //         skip + limit
+    //     );
+    //     return res.json({data:pagedData,  total: productCache[clientCode].allProducts.length, page, limit});
+    // }
 
-    console.log("⏳ CACHE MISS → Querying MongoDB:", clientCode);
+    // console.log("⏳ CACHE MISS → Querying MongoDB:", clientCode);
 
     // Fetch once from DB
     const allProducts = await req.productsCollection.find().toArray();

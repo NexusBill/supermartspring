@@ -36,24 +36,7 @@ router.get("/", async (req, res) => {
   let limit = parseInt(req.query.limit) || 20;
   let skip = (page - 1) * limit;
 
-  if (
-    customerCache[clientCode] &&
-    Date.now() - customerCache[clientCode].timestamp < CACHE_TTL
-  ) {
-    console.log("⚡ CUSTOMER CACHE HIT:", clientCode);
 
-    const paged = customerCache[clientCode].allCustomers.slice(
-      skip,
-      skip + limit
-    );
-
-    return res.json({
-      data: paged,
-      total: customerCache[clientCode].allCustomers.length,
-      page,
-      limit
-    });
-  }
 
   console.log("⏳ CUSTOMER CACHE MISS");
 
