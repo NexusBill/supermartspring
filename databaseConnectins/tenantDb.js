@@ -39,7 +39,13 @@ async function getTenantDB(clientCode) {
     });
   }
 
-  return connections[clientCode];
+  // Return both the connection and a method to get native collection
+  const connection = connections[clientCode];
+  connection.getCollection = function(name) {
+    return this.collection(name);
+  };
+  
+  return connection;
 }
 
 module.exports = getTenantDB;

@@ -40,7 +40,7 @@ router.get("/", async (req, res) => {
 
   console.log("⏳ CUSTOMER CACHE MISS");
 
-  const allCustomers = await req.customersCollection.find().toArray();
+  const allCustomers = await req.customersCollection.find({ status: "active" }).toArray();
 
   customerCache[clientCode] = {
     allCustomers,
@@ -74,7 +74,8 @@ router.get("/:id", async (req, res) => {
   }
 
   const customer = await req.customersCollection.findOne({
-    _id: new ObjectId(id)
+    _id: new ObjectId(id),
+    status: "active"
   });
 
   if (!customer) return res.status(404).json({ error: "Customer not found" });

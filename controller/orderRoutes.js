@@ -186,16 +186,17 @@ router.post("/", async (req, res) => {
       customerId: req.body.customerId || "",
       customer: req.body.customer,
       mobile: req.body.mobile,
-      amount: req.body.amount,
       discount: req.body.discount,
       savings: req.body.savings || 0,
       date: req.body.date,
-      amountPaid: req.body.amountPaid,
+      amountPaid: req.body.paid || 0,
+      amount: req.body.amount || 0,
+      unpaid:req.body.unpaid || 0,
       paymentMode: req.body.paymentMode,
       orderBy: req.body.orderBy,
       deliveryAddress: req.body.deliveryAddress,
       products: req.body.products || [],
-      status: "pending",          // default
+      status: req.body.status || "pending",          // default
       createdAt: new Date(),      // auto timestamp
       updatedAt: new Date()
     };
@@ -228,7 +229,7 @@ router.post("/", async (req, res) => {
       .replace("{{orderItems}}", rows)
       .replace("{{total}}", req.body.amount);
 
-        const adminEmaill = "nexusbills.official@gmail.com";
+        const adminEmaill =  req.body.email || adminEmail; // Use provided email or fallback to tenant's admin email
 
     // Send email
     await sendEmail(adminEmaill, `🛒 New Order #${orderId}`, html);

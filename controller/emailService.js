@@ -16,7 +16,6 @@ async function sendEmail(to, subject, html) {
     to,
     subject,
     html,
-    cc:`abdul1549070@gmail.com`
   });
 }
 
